@@ -89,6 +89,9 @@ public class WatheConfig extends MidnightConfig {
     @Server
     @Entry(category = "GameConstants", min = 0)
     public static int ticksOnCivilianKill = 1200;
+    @Server
+    @Entry(category = "GameConstants", min = 0)
+    public static int gunRange = 65;
 
     @Override
     public void writeChanges(String modid) {

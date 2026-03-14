@@ -20,6 +20,7 @@ import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 
 public class RevolverItem extends Item {
+    public static final float CLIENT_GUN_RANGE = 15f;
     public RevolverItem(Settings settings) {
         super(settings);
     }
@@ -54,6 +55,6 @@ public class RevolverItem extends Item {
     }
 
     public static HitResult getGunTarget(PlayerEntity user) {
-        return ProjectileUtil.getCollision(user, entity -> entity instanceof PlayerEntity player && GameFunctions.isPlayerAliveAndSurvival(player), 15f);
+        return ProjectileUtil.getCollision(user, entity -> entity instanceof PlayerEntity player && GameFunctions.isPlayerAliveAndSurvival(player), CLIENT_GUN_RANGE);
     }
 }

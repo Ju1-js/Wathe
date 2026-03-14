@@ -1,6 +1,7 @@
 package dev.doctor4t.wathe.util;
 
 import dev.doctor4t.wathe.Wathe;
+import dev.doctor4t.wathe.WatheConfig;
 import dev.doctor4t.wathe.cca.GameWorldComponent;
 import dev.doctor4t.wathe.cca.PlayerMoodComponent;
 import dev.doctor4t.wathe.game.GameConstants;
@@ -9,10 +10,13 @@ import dev.doctor4t.wathe.index.WatheDataComponentTypes;
 import dev.doctor4t.wathe.index.WatheItems;
 import dev.doctor4t.wathe.index.WatheSounds;
 import dev.doctor4t.wathe.index.tag.WatheItemTags;
+import dev.doctor4t.wathe.item.RevolverItem;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.entity.player.PlayerEntity;
+import net.minecraft.entity.projectile.ProjectileUtil;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.network.PacketByteBuf;
@@ -21,6 +25,8 @@ import net.minecraft.network.codec.PacketCodecs;
 import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
+import net.minecraft.util.hit.EntityHitResult;
+import net.minecraft.util.hit.HitResult;
 import org.jetbrains.annotations.NotNull;
 
 public record GunShootPayload(int target) implements CustomPayload {
@@ -56,7 +62,18 @@ public record GunShootPayload(int target) implements CustomPayload {
                 if (!player.isCreative()) mainHandStack.set(WatheDataComponentTypes.USED, true);
             }
 
-            if (player.getServerWorld().getEntityById(payload.target()) instanceof PlayerEntity target && target.distanceTo(player) < 65.0) {
+            Entity entity = player.getServerWorld().getEntityById(payload.target());
+
+            if (payload.target() == -1 && WatheConfig.gunRange > RevolverItem.CLIENT_GUN_RANGE) {
+                // hacky server side logic
+                // lag compensation? what's that?
+                HitResult hitResult = ProjectileUtil.getCollision(player, e -> e instanceof PlayerEntity otherPlayer && GameFunctions.isPlayerAliveAndSurvival(otherPlayer), WatheConfig.gunRange);
+                if (hitResult instanceof EntityHitResult entityHitResult) {
+                    entity = entityHitResult.getEntity();
+                }
+            }
+
+            if (entity instanceof PlayerEntity target && target.distanceTo(player) < WatheConfig.gunRange) {
                 GameWorldComponent game = GameWorldComponent.KEY.get(player.getWorld());
                 Item revolver = WatheItems.REVOLVER;
 
