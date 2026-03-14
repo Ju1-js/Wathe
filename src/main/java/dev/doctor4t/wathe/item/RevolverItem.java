@@ -20,6 +20,7 @@ import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 
 public class RevolverItem extends Item {
+    // clients aren't necessarily updated, use old gun range and just do logic on the server side lol
     public static final float CLIENT_GUN_RANGE = 15f;
     public RevolverItem(Settings settings) {
         super(settings);
