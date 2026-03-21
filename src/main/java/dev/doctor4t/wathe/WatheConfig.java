@@ -119,6 +119,9 @@ public class WatheConfig extends MidnightConfig {
     @Server
     @Entry(category = "CustomMap", min = 0)
     public static int customMapNumRoomKeys = 7;
+    @Server
+    @Entry(category = "CustomMap")
+    public static String customMapRoomKeyString = "Room %d";
 
     @Override
     public void writeChanges(String modid) {

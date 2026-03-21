@@ -25,7 +25,7 @@ public class CustomConfigMapEffect extends KeyProvidingMapEffect {
             serverWorld.setWeather(clearTime, rainDuration, WatheConfig.customMapRaining, WatheConfig.customMapThundering);
         }
         if (WatheConfig.customMapNumRoomKeys > 0)
-            provideKeysOnly(serverWorld, players, WatheConfig.customMapNumRoomKeys);
+            provideKeysOnly(serverWorld, players, WatheConfig.customMapNumRoomKeys, WatheConfig.customMapRoomKeyString);
         String[] guaranteedKeys = keyVarToArray(WatheConfig.customMapGuaranteedKeys);
         String[] uniqueKeys = keyVarToArray(WatheConfig.customMapUniqueKeys);
         for (String guaranteedKey : guaranteedKeys) {

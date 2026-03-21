@@ -26,12 +26,16 @@ public abstract class KeyProvidingMapEffect extends MapEffect {
     }
 
     protected void provideKeysOnly(ServerWorld serverWorld, List<ServerPlayerEntity> players, int rooms) {
+        provideKeysOnly(serverWorld, players, rooms, "Room %d");
+    }
+
+    protected void provideKeysOnly(ServerWorld serverWorld, List<ServerPlayerEntity> players, int rooms, String roomKeyFormat) {
         Collections.shuffle(players);
         int roomNumber = 0;
         for (ServerPlayerEntity serverPlayerEntity : players) {
             roomNumber = roomNumber % rooms + 1;
             int finalRoomNumber = roomNumber;
-            givePlayerKey("Room " + finalRoomNumber, serverPlayerEntity);
+            givePlayerKey(roomKeyFormat.formatted(finalRoomNumber), serverPlayerEntity);
         }
     }
 
