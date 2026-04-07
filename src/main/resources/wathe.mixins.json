@@ -5,6 +5,9 @@
   "plugin": "dev.doctor4t.wathe.mixin.TmmMixinPlugin",
   "mixins": [
     "AbstractBlockInvoker",
+    "DimensionTypeMixin",
+    "MinecraftServerAccessor",
+    "PlayerManagerMixin",
     "AbstractBlockSettingsMixin",
     "DedicatedPlayerManagerMixin",
     "EntityMixin",
