@@ -15,7 +15,7 @@ import dev.doctor4t.wathe.game.GameConstants;
 import dev.doctor4t.wathe.index.*;
 import dev.doctor4t.wathe.util.*;
 import dev.upcraft.datasync.api.DataSyncAPI;
-//import dev.upcraft.datasync.api.util.Entitlements;
+import dev.upcraft.datasync.api.util.Entitlements;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.ArgumentTypeRegistry;
 import net.fabricmc.loader.api.FabricLoader;
@@ -36,7 +36,7 @@ import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-//import java.util.Optional;
+import java.util.Optional;
 
 public class Wathe implements ModInitializer {
     public static final String MOD_ID = "wathe";

@@ -132,7 +132,10 @@ public class WatheMapWorlds {
         Map<RegistryKey<World>, ServerWorld> worlds = ((MinecraftServerAccessor) server).getWorlds();
         worlds.remove(key);
         try {
-            world.save(null, true, false);
+            // flush=false queues chunk writes asynchronously instead of blocking
+            // the server thread. flush=true causes CompletableFuture.join() on the
+            // main thread which triggers watchdog crashes.
+            world.save(null, false, false);
             world.close();
             Wathe.LOGGER.info("Unloaded map world '{}'.", folderNameFrom(key));
         } catch (IOException e) {
