@@ -84,9 +84,6 @@ public class WatheClient implements ClientModInitializer {
 
     @Override
     public void onInitializeClient() {
-        // Load config
-        WatheConfig.init(Wathe.MOD_ID, WatheConfig.class);
-
         // Initialize ScreenParticle
         handParticleManager = new HandParticleManager();
         particleMap = new HashMap<>();
