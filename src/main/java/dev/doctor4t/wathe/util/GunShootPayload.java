@@ -67,6 +67,7 @@ public record GunShootPayload(int target) implements CustomPayload {
             }
 
             Entity entity = player.getServerWorld().getEntityById(payload.target());
+            boolean entityFromCollision = false;
 
             if (payload.target() == -1 && WatheConfig.gunRange > UNPATCHED_CLIENT_GUN_RANGE) {
                 // fix noelle's roles fake gun being actually working
@@ -76,11 +77,12 @@ public record GunShootPayload(int target) implements CustomPayload {
                     HitResult hitResult = ProjectileUtil.getCollision(player, new PlayerPredicate(), WatheConfig.gunRange);
                     if (hitResult instanceof EntityHitResult entityHitResult) {
                         entity = entityHitResult.getEntity();
+                        entityFromCollision = true;
                     }
                 }
             }
 
-            if (entity instanceof PlayerEntity target && isWithinRange(player, target)) {
+            if (entity instanceof PlayerEntity target && (entityFromCollision || RangeChecks.isWithinRange(player, target, WatheConfig.gunRange))) {
                 GameWorldComponent game = GameWorldComponent.KEY.get(player.getWorld());
                 Item revolver = WatheItems.REVOLVER;
 
@@ -118,22 +120,6 @@ public record GunShootPayload(int target) implements CustomPayload {
             ServerPlayNetworking.send(player, new ShootMuzzleS2CPayload(player.getUuidAsString()));
             if (!player.isCreative())
                 player.getItemCooldownManager().set(mainHandStack.getItem(), GameConstants.ITEM_COOLDOWNS.getOrDefault(mainHandStack.getItem(), 0));
-        }
-
-        private static boolean isWithinRange(ServerPlayerEntity shooter, PlayerEntity target) {
-            if (target.distanceTo(shooter) < WatheConfig.gunRange) return true;
-
-            // Find the closest point on target hitbox to shooter eyes
-            double closestX = Math.max(target.getX() - target.getWidth() / 2.0, Math.min(shooter.getX(), target.getX() + target.getWidth() / 2.0));
-            double closestY = Math.max(target.getY(), Math.min(shooter.getEyeY(), target.getY() + target.getHeight()));
-            double closestZ = Math.max(target.getZ() - target.getWidth() / 2.0, Math.min(shooter.getZ(), target.getZ() + target.getWidth() / 2.0));
-
-            double dx = closestX - shooter.getX();
-            double dy = closestY - shooter.getEyeY();
-            double dz = closestZ - shooter.getZ();
-            double eyeToBoxDist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-            return eyeToBoxDist < WatheConfig.gunRange;
         }
 
         // create a predicate rather than a lambda to prevent conflicts with More Shooter Punishments
