@@ -19,12 +19,12 @@ import dev.upcraft.datasync.api.DataSyncAPI;
 import dev.upcraft.datasync.api.util.Entitlements;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.ArgumentTypeRegistry;
-import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
-// [WATHE_PERSISTENT_MAP] import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.command.argument.serialize.ConstantArgumentSerializer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -86,7 +86,7 @@ public class Wathe implements ModInitializer {
         }));
 
         // Auto-load the last used map world on startup
-        // [WATHE_PERSISTENT_MAP] ServerLifecycleEvents.SERVER_STARTED.register(WatheMapWorlds::autoLoad);
+        ServerLifecycleEvents.SERVER_STARTED.register(WatheMapWorlds::autoLoad);
 
         // Redirect players to the active map world on respawn (vanilla always respawns in minecraft:overworld)
         ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
@@ -108,7 +108,6 @@ public class Wathe implements ModInitializer {
                     player.teleportTo(new TeleportTarget(target, spawn.pos, Vec3d.ZERO, spawn.yaw, spawn.pitch, TeleportTarget.NO_OP));
                 });
             }
-            // [WATHE_PERSISTENT_MAP] WatheMapWorlds.redirectFromHub(player);
             Scheduler.schedule(() -> {
                 if (player.getServer().getPlayerManager().getPlayer(player.getUuid()) == null) return;
                 String activeMap = WatheMapWorlds.getCurrentMapName();
