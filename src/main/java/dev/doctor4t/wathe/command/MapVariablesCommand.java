@@ -1,6 +1,7 @@
 package dev.doctor4t.wathe.command;
 
 import com.mojang.brigadier.CommandDispatcher;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.context.CommandContext;
 import dev.doctor4t.wathe.Wathe;
 import dev.doctor4t.wathe.api.GameMode;
@@ -142,6 +143,17 @@ public class MapVariablesCommand {
                                                 )
                                         )
                                 )
+                                .then(CommandManager.literal("hornBlockMapEffectId")
+                                        .then(CommandManager.argument("id", StringArgumentType.string())
+                                                .executes(
+                                                        context -> setValue(
+                                                                context.getSource(), "hornBlockMapEffectId",
+                                                                StringArgumentType.getString(context, "id"),
+                                                                id -> getMapVarsComponent(context).setHornBlockMapEffectId(id)
+                                                        )
+                                                )
+                                        )
+                                )
                         )
         );
     }
@@ -169,7 +181,7 @@ public class MapVariablesCommand {
         }
     }
 
-    private static void setGameModeAndMapEffect(ServerCommandSource source,GameMode gameMode, MapEffect mapEffect, GameWorldComponent gameWorldComponent) {
+    private static void setGameModeAndMapEffect(ServerCommandSource source, GameMode gameMode, MapEffect mapEffect, GameWorldComponent gameWorldComponent) {
         gameWorldComponent.setGameMode(gameMode);
         gameWorldComponent.setMapEffect(mapEffect);
         mapEffect.initializeMapEffects(source.getWorld(), source.getWorld().getPlayers());

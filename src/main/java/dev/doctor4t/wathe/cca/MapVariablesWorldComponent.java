@@ -35,6 +35,8 @@ public class MapVariablesWorldComponent implements AutoSyncedComponent {
     Box resetTemplateArea = new Box(-57, 64, -531, 177, 74, -541);
     Vec3i resetPasteOffset = new Vec3i(0, 55, 0);
 
+    String hornBlockMapEffectId = "hotel";
+
     public PosWithOrientation getSpawnPos() {
         return spawnPos;
     }
@@ -98,6 +100,15 @@ public class MapVariablesWorldComponent implements AutoSyncedComponent {
         this.sync();
     }
 
+    public String getHornBlockMapEffectId() {
+        return hornBlockMapEffectId;
+    }
+
+    public void setHornBlockMapEffectId(String hornBlockMapEffectId) {
+        this.hornBlockMapEffectId = hornBlockMapEffectId;
+        this.sync();
+    }
+
     @Override
     public void readFromNbt(@NotNull NbtCompound tag, RegistryWrapper.@NotNull WrapperLookup registryLookup) {
         this.spawnPos = getPosWithOrientationFromNbt(tag, "spawnPos");
@@ -107,6 +118,9 @@ public class MapVariablesWorldComponent implements AutoSyncedComponent {
         this.playArea = getBoxFromNbt(tag, "playArea");
         this.resetTemplateArea = getBoxFromNbt(tag, "resetTemplateArea");
         this.resetPasteOffset = getVec3iFromNbt(tag, "resetPasteOffset");
+        if (tag.contains("hornBlockMapEffectId")) {
+            this.hornBlockMapEffectId = tag.getString("hornBlockMapEffectId");
+        }
     }
 
     @Override
@@ -118,6 +132,7 @@ public class MapVariablesWorldComponent implements AutoSyncedComponent {
         writeBoxToNbt(tag, this.playArea, "playArea");
         writeBoxToNbt(tag, this.resetTemplateArea, "resetTemplateArea");
         writeVec3iToNbt(tag, this.resetPasteOffset, "resetPasteOffset");
+        tag.putString("hornBlockMapEffectId", this.hornBlockMapEffectId);
     }
 
     public static class PosWithOrientation {

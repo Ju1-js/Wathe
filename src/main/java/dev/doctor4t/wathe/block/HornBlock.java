@@ -1,12 +1,12 @@
 package dev.doctor4t.wathe.block;
 
 import com.mojang.serialization.MapCodec;
-import dev.doctor4t.wathe.WatheConfig;
 import dev.doctor4t.wathe.api.GameMode;
 import dev.doctor4t.wathe.api.WatheGameModes;
 import dev.doctor4t.wathe.api.WatheMapEffects;
 import dev.doctor4t.wathe.block.entity.HornBlockEntity;
 import dev.doctor4t.wathe.cca.GameWorldComponent;
+import dev.doctor4t.wathe.cca.MapVariablesWorldComponent;
 import dev.doctor4t.wathe.game.GameConstants;
 import dev.doctor4t.wathe.game.GameFunctions;
 import dev.doctor4t.wathe.index.WatheBlockEntities;
@@ -72,7 +72,8 @@ public class HornBlock extends BlockWithEntity {
                 GameWorldComponent gameWorldComponent = GameWorldComponent.KEY.get(serverWorld);
                 if (isOp && !gameWorldComponent.isRunning()) {
                     GameMode gameMode = WatheGameModes.MURDER;
-                    GameFunctions.startGame(serverWorld, gameMode, WatheMapEffects.getMapEffect(WatheConfig.hornBlockMapEffectId), GameConstants.getInTicks(gameMode.defaultStartTime, 0));
+                    MapVariablesWorldComponent mapVars = MapVariablesWorldComponent.KEY.get(serverWorld);
+                    GameFunctions.startGame(serverWorld, gameMode, WatheMapEffects.getMapEffect(mapVars.getHornBlockMapEffectId()), GameConstants.getInTicks(gameMode.defaultStartTime, 0));
                 }
 
                 hornBlockEntity.pull(1);
