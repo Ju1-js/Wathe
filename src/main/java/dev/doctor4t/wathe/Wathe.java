@@ -9,6 +9,7 @@ import dev.doctor4t.wathe.command.argument.GameModeArgumentType;
 import dev.doctor4t.wathe.command.argument.MapEffectArgumentType;
 import dev.doctor4t.wathe.command.argument.TimeOfDayArgumentType;
 import dev.doctor4t.wathe.world.WatheMapWorlds;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.TeleportTarget;
 import dev.doctor4t.wathe.game.GameConstants;
@@ -100,7 +101,27 @@ public class Wathe implements ModInitializer {
 
         // server lock to supporters; also redirect players from hub to current map
         ServerPlayerEvents.JOIN.register(player -> {
+            String mapName = WatheMapWorlds.getCurrentMapName();
+            if (mapName != null) {
+                WatheMapWorlds.getLoaded(player.getServer(), mapName).ifPresent(target -> {
+                    MapVariablesWorldComponent.PosWithOrientation spawn = MapVariablesWorldComponent.KEY.get(target).getSpawnPos();
+                    player.teleportTo(new TeleportTarget(target, spawn.pos, Vec3d.ZERO, spawn.yaw, spawn.pitch, TeleportTarget.NO_OP));
+                });
+            }
             // [WATHE_PERSISTENT_MAP] WatheMapWorlds.redirectFromHub(player);
+            Scheduler.schedule(() -> {
+                if (player.getServer().getPlayerManager().getPlayer(player.getUuid()) == null) return;
+                String activeMap = WatheMapWorlds.getCurrentMapName();
+                if (activeMap == null) return;
+                ServerWorld expected = WatheMapWorlds.getLoaded(player.getServer(), activeMap).orElse(null);
+                if (expected == null) return;
+                if (player.getServerWorld() != expected) {
+                    LOGGER.warn("[join-check] {} not in map world '{}' - actual: {} @ {},{},{}",
+                            player.getNameForScoreboard(), activeMap,
+                            player.getServerWorld().getRegistryKey().getValue(),
+                            String.format("%.1f", player.getX()), String.format("%.1f", player.getY()), String.format("%.1f", player.getZ()));
+                }
+            }, 3);
             DataSyncAPI.refreshAllPlayerData(player.getUuid()).thenRunAsync(() -> {
                 // check if player is supporter now, if not kick
                 if (GameWorldComponent.KEY.get(player.getWorld()).isLockedToSupporters() && !Wathe.isSupporter(player)) {
