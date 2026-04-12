@@ -2,8 +2,10 @@ package dev.doctor4t.wathe.command;
 
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.StringArgumentType;
+import dev.doctor4t.wathe.Wathe;
 import dev.doctor4t.wathe.cca.GameWorldComponent;
 import dev.doctor4t.wathe.cca.MapVariablesWorldComponent;
+import dev.doctor4t.wathe.util.Scheduler;
 import dev.doctor4t.wathe.world.WatheMapWorlds;
 import net.minecraft.command.CommandSource;
 import net.minecraft.server.command.CommandManager;
@@ -60,12 +62,24 @@ public class MapCommand {
         MapVariablesWorldComponent.PosWithOrientation spawnPos = MapVariablesWorldComponent.KEY.get(target).getSpawnPos();
         TeleportTarget teleportTarget = new TeleportTarget(target, spawnPos.pos, Vec3d.ZERO, spawnPos.yaw, spawnPos.pitch, TeleportTarget.NO_OP);
 
-        for (ServerPlayerEntity player : source.getServer().getPlayerManager().getPlayerList()) {
+        for (ServerPlayerEntity player : List.copyOf(source.getServer().getPlayerManager().getPlayerList())) {
             player.teleportTo(teleportTarget);
         }
 
         // null means "back in the hub" no active dynamic map
         WatheMapWorlds.setCurrentMap(source.getServer(), targetIsHub ? null : name);
+
+        final ServerWorld expectedWorld = target;
+        Scheduler.schedule(() -> {
+            for (ServerPlayerEntity p : source.getServer().getPlayerManager().getPlayerList()) {
+                if (p.getServerWorld() != expectedWorld) {
+                    Wathe.LOGGER.warn("[swap-check] {} not in map '{}' after swap - actual: {} @ {},{},{}",
+                            p.getNameForScoreboard(), name,
+                            p.getServerWorld().getRegistryKey().getValue(),
+                            String.format("%.1f", p.getX()), String.format("%.1f", p.getY()), String.format("%.1f", p.getZ()));
+                }
+            }
+        }, 3);
 
         // Unload the previous world if it was a dynamically loaded map world
         if (previousWasMapWorld) {

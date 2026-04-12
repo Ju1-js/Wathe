@@ -9,6 +9,7 @@ import dev.doctor4t.wathe.command.argument.GameModeArgumentType;
 import dev.doctor4t.wathe.command.argument.MapEffectArgumentType;
 import dev.doctor4t.wathe.command.argument.TimeOfDayArgumentType;
 import dev.doctor4t.wathe.world.WatheMapWorlds;
+import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.TeleportTarget;
 import dev.doctor4t.wathe.game.GameConstants;
@@ -18,12 +19,12 @@ import dev.upcraft.datasync.api.DataSyncAPI;
 import dev.upcraft.datasync.api.util.Entitlements;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.ArgumentTypeRegistry;
-import net.fabricmc.loader.api.FabricLoader;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
-// [WATHE_PERSISTENT_MAP] import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
 import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.command.argument.serialize.ConstantArgumentSerializer;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -85,7 +86,7 @@ public class Wathe implements ModInitializer {
         }));
 
         // Auto-load the last used map world on startup
-        // [WATHE_PERSISTENT_MAP] ServerLifecycleEvents.SERVER_STARTED.register(WatheMapWorlds::autoLoad);
+        ServerLifecycleEvents.SERVER_STARTED.register(WatheMapWorlds::autoLoad);
 
         // Redirect players to the active map world on respawn (vanilla always respawns in minecraft:overworld)
         ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
@@ -100,7 +101,26 @@ public class Wathe implements ModInitializer {
 
         // server lock to supporters; also redirect players from hub to current map
         ServerPlayerEvents.JOIN.register(player -> {
-            // [WATHE_PERSISTENT_MAP] WatheMapWorlds.redirectFromHub(player);
+            String mapName = WatheMapWorlds.getCurrentMapName();
+            if (mapName != null) {
+                WatheMapWorlds.getLoaded(player.getServer(), mapName).ifPresent(target -> {
+                    MapVariablesWorldComponent.PosWithOrientation spawn = MapVariablesWorldComponent.KEY.get(target).getSpawnPos();
+                    player.teleportTo(new TeleportTarget(target, spawn.pos, Vec3d.ZERO, spawn.yaw, spawn.pitch, TeleportTarget.NO_OP));
+                });
+            }
+            Scheduler.schedule(() -> {
+                if (player.getServer().getPlayerManager().getPlayer(player.getUuid()) == null) return;
+                String activeMap = WatheMapWorlds.getCurrentMapName();
+                if (activeMap == null) return;
+                ServerWorld expected = WatheMapWorlds.getLoaded(player.getServer(), activeMap).orElse(null);
+                if (expected == null) return;
+                if (player.getServerWorld() != expected) {
+                    LOGGER.warn("[join-check] {} not in map world '{}' - actual: {} @ {},{},{}",
+                            player.getNameForScoreboard(), activeMap,
+                            player.getServerWorld().getRegistryKey().getValue(),
+                            String.format("%.1f", player.getX()), String.format("%.1f", player.getY()), String.format("%.1f", player.getZ()));
+                }
+            }, 3);
             DataSyncAPI.refreshAllPlayerData(player.getUuid()).thenRunAsync(() -> {
                 // check if player is supporter now, if not kick
                 if (GameWorldComponent.KEY.get(player.getWorld()).isLockedToSupporters() && !Wathe.isSupporter(player)) {

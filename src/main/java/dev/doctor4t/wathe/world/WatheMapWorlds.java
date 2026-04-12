@@ -1,8 +1,12 @@
 package dev.doctor4t.wathe.world;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParser;
 import dev.doctor4t.wathe.Wathe;
 import dev.doctor4t.wathe.cca.MapVariablesWorldComponent;
 import dev.doctor4t.wathe.mixin.MinecraftServerAccessor;
+import net.fabricmc.loader.api.FabricLoader;
 import net.minecraft.registry.RegistryKey;
 import net.minecraft.registry.RegistryKeys;
 import net.minecraft.server.MinecraftServer;
@@ -10,6 +14,7 @@ import net.minecraft.server.WorldGenerationProgressListener;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ChunkTicketType;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.util.Unit;
 import net.minecraft.util.math.ChunkPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.TeleportTarget;
@@ -17,8 +22,6 @@ import net.minecraft.world.World;
 import net.minecraft.world.chunk.ChunkStatus;
 import net.minecraft.world.dimension.DimensionOptions;
 import net.minecraft.world.level.storage.LevelStorage;
-
-import net.minecraft.util.Unit;
 
 import java.io.File;
 import java.io.IOException;
@@ -30,7 +33,8 @@ import java.util.concurrent.Executor;
 public class WatheMapWorlds {
     public static final String MAP_KEY_NAMESPACE = "wathe";
     public static final String MAP_KEY_PREFIX = "map/";
-    private static final String LAST_MAP_FILE = "wathe-last-map.txt";
+    private static final Path STATE_FILE = FabricLoader.getInstance().getConfigDir().resolve("wathe").resolve("server-state.json");
+    private static final Gson GSON = new Gson();
 
     private static String currentMapName = null;
 
@@ -57,7 +61,7 @@ public class WatheMapWorlds {
      * If no last map is recorded, does nothing and players stay in the hub.
      */
     public static void autoLoad(MinecraftServer server) {
-        String lastName = readLastMapName(server);
+        String lastName = readLastMapName();
         if (lastName == null) return;
         File folder = server.getRunDirectory().resolve(lastName).toFile();
         if (!folder.isDirectory() || !new File(folder, "level.dat").exists()) {
@@ -71,19 +75,6 @@ public class WatheMapWorlds {
         } catch (Exception e) {
             Wathe.LOGGER.error("Failed to auto-load last map world '{}': {}", lastName, e.getMessage());
         }
-    }
-
-    /**
-     * Teleports a joining player from the hub to the current map world, if one is active.
-     */
-    public static void redirectFromHub(ServerPlayerEntity player) {
-        MinecraftServer server = player.getServer();
-        if (server == null || currentMapName == null) return;
-        ServerWorld current = getLoaded(server, currentMapName).orElse(null);
-        if (current == null || player.getServerWorld() == current) return;
-        // Only redirect players who spawned in the hub world
-        if (isMapWorldKey(player.getServerWorld().getRegistryKey())) return;
-        teleportOne(player, current);
     }
 
     /**
@@ -144,11 +135,12 @@ public class WatheMapWorlds {
     }
 
     /**
-     * Records the current map. Persistence across restarts is disabled for now; see WATHE_PERSISTENT_MAP comments.
+     * Records the current map name in memory and persists it to {@code config/wathe/server-state.json}
+     * so it can be restored on next server start. Pass {@code null} to clear (back to hub).
      */
     public static void setCurrentMap(MinecraftServer server, String folderName) {
         currentMapName = folderName;
-        // [WATHE_PERSISTENT_MAP] saveLastMapName(server, folderName);
+        saveLastMapName(folderName);
     }
 
     public static String getCurrentMapName() {
@@ -170,22 +162,26 @@ public class WatheMapWorlds {
         player.teleportTo(new TeleportTarget(world, spawn.pos, Vec3d.ZERO, spawn.yaw, spawn.pitch, TeleportTarget.NO_OP));
     }
 
-    private static void saveLastMapName(MinecraftServer server, String name) {
+    private static void saveLastMapName(String name) {
         try {
-            Files.writeString(server.getRunDirectory().resolve(LAST_MAP_FILE), name);
+            Files.createDirectories(STATE_FILE.getParent());
+            JsonObject json = new JsonObject();
+            if (name != null) json.addProperty("lastMap", name);
+            Files.writeString(STATE_FILE, GSON.toJson(json));
         } catch (IOException e) {
-            Wathe.LOGGER.error("Failed to save last map name: {}", e.getMessage());
+            Wathe.LOGGER.error("Failed to save server state: {}", e.getMessage());
         }
     }
 
-    private static String readLastMapName(MinecraftServer server) {
-        Path file = server.getRunDirectory().resolve(LAST_MAP_FILE);
-        if (!Files.exists(file)) return null;
+    private static String readLastMapName() {
+        if (!Files.exists(STATE_FILE)) return null;
         try {
-            String name = Files.readString(file).strip();
+            JsonObject json = JsonParser.parseString(Files.readString(STATE_FILE)).getAsJsonObject();
+            if (!json.has("lastMap") || json.get("lastMap").isJsonNull()) return null;
+            String name = json.get("lastMap").getAsString().strip();
             return name.isEmpty() ? null : name;
-        } catch (IOException e) {
-            Wathe.LOGGER.error("Failed to read last map name: {}", e.getMessage());
+        } catch (Exception e) {
+            Wathe.LOGGER.error("Failed to read server state: {}", e.getMessage());
             return null;
         }
     }
