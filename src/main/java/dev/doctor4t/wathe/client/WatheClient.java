@@ -6,6 +6,8 @@ import dev.doctor4t.ratatouille.client.util.ambience.AmbienceUtil;
 import dev.doctor4t.ratatouille.client.util.ambience.BackgroundAmbience;
 import dev.doctor4t.wathe.Wathe;
 import dev.doctor4t.wathe.WatheConfig;
+import dev.doctor4t.wathe.api.WatheGameModes;
+import dev.doctor4t.wathe.api.WatheRoles;
 import dev.doctor4t.wathe.cca.GameWorldComponent;
 import dev.doctor4t.wathe.cca.PlayerMoodComponent;
 import dev.doctor4t.wathe.cca.TrainWorldComponent;
@@ -14,6 +16,7 @@ import dev.doctor4t.wathe.client.gui.StoreRenderer;
 import dev.doctor4t.wathe.client.gui.TimeRenderer;
 import dev.doctor4t.wathe.client.model.WatheModelLayers;
 import dev.doctor4t.wathe.client.model.item.KnifeModelLoadingPlugin;
+import dev.doctor4t.wathe.client.model.item.RevolverModelLoadingPlugin;
 import dev.doctor4t.wathe.client.render.block_entity.PlateBlockEntityRenderer;
 import dev.doctor4t.wathe.client.render.block_entity.SmallDoorBlockEntityRenderer;
 import dev.doctor4t.wathe.client.render.block_entity.WheelBlockEntityRenderer;
@@ -26,7 +29,12 @@ import dev.doctor4t.wathe.entity.NoteEntity;
 import dev.doctor4t.wathe.game.GameConstants;
 import dev.doctor4t.wathe.game.GameFunctions;
 import dev.doctor4t.wathe.index.*;
-import dev.doctor4t.wathe.util.*;
+import dev.doctor4t.wathe.item.AttackUseItem;
+import dev.doctor4t.wathe.client.util.GunControls;
+import dev.doctor4t.wathe.network.*;
+import dev.doctor4t.wathe.util.ConfigSyncPayload;
+import dev.doctor4t.wathe.util.HandParticleManager;
+import dev.doctor4t.wathe.util.PoisonUtils;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.blockrenderlayer.v1.BlockRenderLayerMap;
@@ -35,6 +43,7 @@ import net.fabricmc.fabric.api.client.keybinding.v1.KeyBindingHelper;
 import net.fabricmc.fabric.api.client.model.loading.v1.ModelLoadingPlugin;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
 import net.fabricmc.fabric.api.client.rendering.v1.EntityRendererRegistry;
+import net.fabricmc.fabric.api.event.client.player.ClientPreAttackCallback;
 import net.minecraft.block.Block;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.client.network.AbstractClientPlayerEntity;
@@ -71,6 +80,8 @@ public class WatheClient implements ClientModInitializer {
     public static TrainWorldComponent trainComponent;
     public static PlayerMoodComponent moodComponent;
 
+    public static final List<UUID> SECRET_MURDER_FAKE_COHORTS = new ArrayList<>();
+
     public static final Map<UUID, PlayerListEntry> PLAYER_ENTRIES_CACHE = Maps.newHashMap();
 
     public static KeyBinding instinctKeybind;
@@ -102,6 +113,7 @@ public class WatheClient implements ClientModInitializer {
 
         // Custom Baked Models
         ModelLoadingPlugin.register(new KnifeModelLoadingPlugin());
+        ModelLoadingPlugin.register(new RevolverModelLoadingPlugin());
 
         // Block render layers
         BlockRenderLayerMap.INSTANCE.putBlocks(RenderLayer.getCutout(), WatheBlocks.STAINLESS_STEEL_VENT_HATCH, WatheBlocks.DARK_STEEL_VENT_HATCH, WatheBlocks.TARNISHED_GOLD_VENT_HATCH, WatheBlocks.METAL_SHEET_WALKWAY, WatheBlocks.STAINLESS_STEEL_LADDER, WatheBlocks.COCKPIT_DOOR, WatheBlocks.METAL_SHEET_DOOR, WatheBlocks.GOLDEN_GLASS_PANEL, WatheBlocks.CULLING_GLASS, WatheBlocks.STAINLESS_STEEL_WALKWAY, WatheBlocks.DARK_STEEL_WALKWAY, WatheBlocks.PANEL_STRIPES, WatheBlocks.RAIL_BEAM, WatheBlocks.TRIMMED_RAILING_POST, WatheBlocks.DIAGONAL_TRIMMED_RAILING, WatheBlocks.TRIMMED_RAILING, WatheBlocks.TRIMMED_EBONY_STAIRS, WatheBlocks.WHITE_LOUNGE_COUCH, WatheBlocks.WHITE_OTTOMAN, WatheBlocks.WHITE_TRIMMED_BED, WatheBlocks.BLUE_LOUNGE_COUCH, WatheBlocks.GREEN_LOUNGE_COUCH, WatheBlocks.BAR_STOOL, WatheBlocks.WALL_LAMP, WatheBlocks.SMALL_BUTTON, WatheBlocks.ELEVATOR_BUTTON, WatheBlocks.STAINLESS_STEEL_SPRINKLER, WatheBlocks.GOLD_SPRINKLER, WatheBlocks.GOLD_ORNAMENT, WatheBlocks.WHEEL, WatheBlocks.RUSTED_WHEEL, WatheBlocks.BARRIER_PANEL, WatheBlocks.FOOD_PLATTER, WatheBlocks.DRINK_TRAY, WatheBlocks.LIGHT_BARRIER, WatheBlocks.HORN);
@@ -137,6 +149,18 @@ public class WatheClient implements ClientModInitializer {
             moodComponent = PlayerMoodComponent.KEY.get(MinecraftClient.getInstance().player);
         });
 
+        ClientPreAttackCallback.EVENT.register((client, player, clickCount) -> {
+            if (player.getMainHandStack().getItem() instanceof AttackUseItem) {
+                if (!GunControls.usesRightClick(player.getMainHandStack())) {
+                    GunControls.fire(player);
+                }
+                client.options.attackKey.setPressed(false);
+
+                return true;
+            }
+            return false;
+        });
+
         // Lock options
         OptionLocker.overrideOption("gamma", 0d);
         // OptionLocker.overrideOption("renderDistance", getLockedRenderDistance(WatheConfig.ultraPerfMode)); // mfw 15 fps on a 3050 - Cup // haha 🫵 brokie - RAT // buy me a better one then - Cup // okay nvm I fixed it I was actually rendering a lot of empty chunks we didn't need my bad LMAO - RAT
@@ -152,7 +176,6 @@ public class WatheClient implements ClientModInitializer {
         OptionLocker.overrideSoundCategoryVolume("player", 1.0);
         OptionLocker.overrideSoundCategoryVolume("ambient", 1.0);
         OptionLocker.overrideSoundCategoryVolume("voice", 1.0);
-
 
         // Item tooltips
         WatheItemTooltips.addTooltips();
@@ -198,6 +221,24 @@ public class WatheClient implements ClientModInitializer {
         ClientTickEvents.END_CLIENT_TICK.register((client) -> {
             WatheClient.handParticleManager.tick();
             RoundTextRenderer.tick();
+        });
+        ClientTickEvents.END_WORLD_TICK.register(clientWorld -> {
+
+            // populate the fake killer cohort list for secret murder
+            GameWorldComponent gameWorldComponent = GameWorldComponent.KEY.get(clientWorld);
+            if (gameWorldComponent.getGameMode() == WatheGameModes.SECRET_MURDER && gameWorldComponent.isRunning()) {
+                if (SECRET_MURDER_FAKE_COHORTS.isEmpty()) {
+                    List<AbstractClientPlayerEntity> playerList = new ArrayList<>(clientWorld.getPlayers().stream().filter(player -> GameFunctions.isPlayerAliveAndSurvival(player) && !player.getUuid().equals(MinecraftClient.getInstance().player.getUuid())).toList());
+                    int killerCohortCount = (int) Math.floor((double) playerList.size() / gameComponent.getKillerDividend());
+                    for (int i = 0; i < killerCohortCount - 1; i++) {
+                        int randomIndex = clientWorld.random.nextInt(playerList.size());
+                        SECRET_MURDER_FAKE_COHORTS.add(playerList.get(randomIndex).getUuid());
+                        playerList.remove(randomIndex);
+                    }
+                }
+            } else if (!SECRET_MURDER_FAKE_COHORTS.isEmpty()) {
+                SECRET_MURDER_FAKE_COHORTS.clear();
+            }
         });
 
         ClientPlayNetworking.registerGlobalReceiver(ConfigSyncPayload.ID, new ConfigSyncPayload.Receiver());
@@ -283,7 +324,13 @@ public class WatheClient implements ClientModInitializer {
             return 0xDB9D00;
         if (target instanceof PlayerEntity player) {
             if (GameFunctions.isPlayerSpectatingOrCreative(player)) return -1;
-            if (isKiller() && gameComponent.canUseKillerFeatures(player)) return MathHelper.hsvToRgb(0F, 1.0F, 0.6F);
+            if (WatheClient.gameComponent.isRole(player, WatheRoles.SECRET_KILLER)) {
+                if (WatheClient.SECRET_MURDER_FAKE_COHORTS.contains(target.getUuid())) {
+                    return 0xDD0000;
+                } else {
+                    return 0x4EDD35;
+                }
+            }
             if (gameComponent.isInnocent(player)) {
                 float mood = PlayerMoodComponent.KEY.get(target).getMood();
                 if (mood < GameConstants.DEPRESSIVE_MOOD_THRESHOLD) {
@@ -293,8 +340,9 @@ public class WatheClient implements ClientModInitializer {
                 } else {
                     return 0x4EDD35;
                 }
+            } else {
+                return 0xDD0000;
             }
-            if (isPlayerSpectatingOrCreative()) return 0xFFFFFF;
         }
         return -1;
     }

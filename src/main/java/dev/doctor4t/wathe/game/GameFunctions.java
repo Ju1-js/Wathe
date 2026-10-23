@@ -5,6 +5,7 @@ import dev.doctor4t.wathe.Wathe;
 import dev.doctor4t.wathe.WatheConfig;
 import dev.doctor4t.wathe.api.GameMode;
 import dev.doctor4t.wathe.api.MapEffect;
+import dev.doctor4t.wathe.api.WatheGameModes;
 import dev.doctor4t.wathe.api.event.AllowPlayerDeath;
 import dev.doctor4t.wathe.api.event.GameEvents;
 import dev.doctor4t.wathe.api.event.ShouldDropOnDeath;
@@ -19,7 +20,7 @@ import dev.doctor4t.wathe.index.WatheDataComponentTypes;
 import dev.doctor4t.wathe.index.WatheEntities;
 import dev.doctor4t.wathe.index.WatheItems;
 import dev.doctor4t.wathe.index.WatheSounds;
-import dev.doctor4t.wathe.util.AnnounceEndingPayload;
+import dev.doctor4t.wathe.network.AnnounceEndingPayload;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
@@ -50,7 +51,9 @@ import net.minecraft.world.World;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.*;
+import java.util.Deque;
+import java.util.HashSet;
+import java.util.List;
 
 public class GameFunctions {
 
@@ -89,6 +92,11 @@ public class GameFunctions {
 
     public static void startGame(ServerWorld world, GameMode gameMode, MapEffect mapEffect, int time) {
         GameWorldComponent game = GameWorldComponent.KEY.get(world);
+
+        if (gameMode == WatheGameModes.MURDER && world.random.nextFloat() <= game.getSecretMurderRoundChance()) {
+            gameMode = WatheGameModes.SECRET_MURDER;
+        }
+
         MapVariablesWorldComponent areas = MapVariablesWorldComponent.KEY.get(world);
         int playerCount = Math.toIntExact(world.getPlayers().stream().filter(serverPlayerEntity -> (areas.getReadyArea().contains(serverPlayerEntity.getPos()))).count());
         game.setGameMode(gameMode);
@@ -167,6 +175,7 @@ public class GameFunctions {
             PlayerShopComponent.KEY.get(serverPlayerEntity).reset();
             PlayerPoisonComponent.KEY.get(serverPlayerEntity).reset();
             PlayerPsychoComponent.KEY.get(serverPlayerEntity).reset();
+            PlayerVariablesComponent.KEY.get(serverPlayerEntity).reset();
             PlayerNoteComponent.KEY.get(serverPlayerEntity).reset();
             PlayerShopComponent.KEY.get(serverPlayerEntity).reset();
             TrainVoicePlugin.resetPlayer(serverPlayerEntity.getUuid());
@@ -242,6 +251,7 @@ public class GameFunctions {
         PlayerShopComponent.KEY.get(player).reset();
         PlayerPoisonComponent.KEY.get(player).reset();
         PlayerPsychoComponent.KEY.get(player).reset();
+        PlayerVariablesComponent.KEY.get(player).reset();
         PlayerNoteComponent.KEY.get(player).reset();
         TrainVoicePlugin.resetPlayer(player.getUuid());
 

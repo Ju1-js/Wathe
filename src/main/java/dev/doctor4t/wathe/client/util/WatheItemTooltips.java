@@ -1,7 +1,10 @@
 package dev.doctor4t.wathe.client.util;
 
 import dev.doctor4t.ratatouille.util.TextUtils;
+import dev.doctor4t.wathe.index.WatheCosmetics;
 import dev.doctor4t.wathe.index.WatheItems;
+import dev.doctor4t.wathe.item.SkinnedItem;
+import dev.doctor4t.wathe.item.PistolItem;
 import net.fabricmc.fabric.api.client.item.v1.ItemTooltipCallback;
 import net.minecraft.client.MinecraftClient;
 import net.minecraft.entity.player.ItemCooldownManager;
@@ -20,6 +23,12 @@ public class WatheItemTooltips {
 
     public static void addTooltips() {
         ItemTooltipCallback.EVENT.register((itemStack, tooltipContext, tooltipType, tooltipList) -> {
+            if (itemStack.getItem() instanceof GunControls.AddonGun) {
+                var options = MinecraftClient.getInstance().options;
+                var shootKey = GunControls.usesRightClick(itemStack) ? options.useKey : options.attackKey;
+                tooltipList.add(Text.translatable("tip.gun.shoot", shootKey.getBoundKeyLocalizedText())
+                        .withColor(REGULAR_TOOLTIP_COLOR));
+            }
             addCooldownText(WatheItems.KNIFE, tooltipList, itemStack);
             addCooldownText(WatheItems.REVOLVER, tooltipList, itemStack);
             addCooldownText(WatheItems.DERRINGER, tooltipList, itemStack);
@@ -48,7 +57,25 @@ public class WatheItemTooltips {
 
     private static void addTooltipForItem(Item item, @NotNull ItemStack itemStack, List<Text> tooltipList) {
         if (itemStack.isOf(item)) {
-            tooltipList.addAll(TextUtils.getTooltipForItem(item, Style.EMPTY.withColor(REGULAR_TOOLTIP_COLOR)));
+            var lines = TextUtils.getTooltipForItem(item, Style.EMPTY.withColor(REGULAR_TOOLTIP_COLOR));
+            if (item instanceof PistolItem && !lines.isEmpty()) {
+                var options = MinecraftClient.getInstance().options;
+                var shootKey = GunControls.usesRightClick(itemStack) ? options.useKey : options.attackKey;
+                tooltipList.add(Text.translatable("tip.gun.shoot", shootKey.getBoundKeyLocalizedText())
+                        .withColor(REGULAR_TOOLTIP_COLOR));
+                tooltipList.addAll(lines.subList(1, lines.size()));
+            } else {
+                tooltipList.addAll(lines);
+            }
+
+            if (item instanceof SkinnedItem itemWithSkin) {
+                WatheCosmetics.ItemSkinsManager.Skin skin = WatheCosmetics.getSkin(itemWithSkin.getSkinManager(), itemStack);
+                if (skin != null) {
+                    tooltipList.add(Text.translatable("tip.skin").styled(style -> style.withColor(0xFF404040))
+                            .append(Text.literal(TextUtils.formatValueString(skin.tooltipName)).styled(style -> style.withColor(skin.getColor())))
+                            .append(Text.translatable("tip.change_skin").styled(style -> style.withColor(0xFF404040))));
+                }
+            }
         }
     }
 

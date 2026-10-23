@@ -7,6 +7,7 @@ import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.llamalad7.mixinextras.sugar.Local;
 import dev.doctor4t.wathe.cca.PlayerPsychoComponent;
 import dev.doctor4t.wathe.client.WatheClient;
+import dev.doctor4t.wathe.client.util.GunControls;
 import dev.doctor4t.wathe.index.WatheItems;
 import dev.doctor4t.wathe.index.tag.WatheItemTags;
 import net.minecraft.client.MinecraftClient;
@@ -21,6 +22,8 @@ import org.jetbrains.annotations.Nullable;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.Shadow;
 import org.spongepowered.asm.mixin.injection.At;
+import org.spongepowered.asm.mixin.injection.Inject;
+import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 @Mixin(MinecraftClient.class)
 public class MinecraftClientMixin {
@@ -39,6 +42,19 @@ public class MinecraftClientMixin {
         }
         if (WatheClient.getInstinctHighlight(entity) != -1) return true;
         return original;
+    }
+
+    // Run after vanilla's block-breaking/riding checks and use-key repeat delay,
+    // but before block/entity interaction so aiming at a door still fires the gun.
+    @Inject(method = "doItemUse", at = @At(value = "FIELD",
+            target = "Lnet/minecraft/client/MinecraftClient;crosshairTarget:Lnet/minecraft/util/hit/HitResult;", ordinal = 0),
+            cancellable = true)
+    private void wathe$rightClickGunUse(CallbackInfo ci) {
+        if (this.player != null && !this.player.isSpectator()
+                && GunControls.usesRightClick(this.player.getMainHandStack())) {
+            GunControls.fire(this.player);
+            ci.cancel();
+        }
     }
 
     @WrapWithCondition(method = "doItemUse",

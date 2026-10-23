@@ -103,8 +103,8 @@ public class WatheLangGen extends FabricLanguageProvider {
 
         builder.add("tip.cooldown", "On cooldown: %s");
         builder.add(TextUtils.getItemTranslationKey(WatheItems.KNIFE) + ".tooltip", "Right-click, hold for a second and get close to your victim\nAfter a kill, cannot be used for 1 minute\nAttack to knock back / push a player (no cooldown)");
-        builder.add(TextUtils.getItemTranslationKey(WatheItems.REVOLVER) + ".tooltip", "Point, right-click and shoot\nDrops if you kill an innocent");
-        builder.add(TextUtils.getItemTranslationKey(WatheItems.DERRINGER) + ".tooltip", "Point, right-click and shoot\nCan only be shot once, so make it count!\nShot is replenished after a kill");
+        builder.add(TextUtils.getItemTranslationKey(WatheItems.REVOLVER) + ".tooltip", "Attack to shoot\nDrops if you kill an innocent");
+        builder.add(TextUtils.getItemTranslationKey(WatheItems.DERRINGER) + ".tooltip", "Attack to shoot\nCan only be shot once, so make it count!\nShot is replenished after a kill");
         builder.add(TextUtils.getItemTranslationKey(WatheItems.GRENADE) + ".tooltip", "Right-click to throw, explodes on impact\nGood to clear groups of people, but be wary of the blast radius!\nSingle use, 5 minute cooldown");
         builder.add(TextUtils.getItemTranslationKey(WatheItems.PSYCHO_MODE) + ".tooltip", "\"Do you like hurting other people?\"\nHides your identity and allows you to go crazy with a bat for 30 seconds\nBat kills on full swing and cannot be unselected for the duration of the ability\nActivated instantly upon purchase, 5 minute cooldown");
         builder.add(TextUtils.getItemTranslationKey(WatheItems.POISON_VIAL) + ".tooltip", "Slip in food or drinks to poison the next pickup");
@@ -137,6 +137,7 @@ public class WatheLangGen extends FabricLanguageProvider {
         builder.add("game.tip.cohort", "Killer Cohort");
         builder.add("game.start_error.not_enough_players", "Game cannot start: %s players minimum are required.");
         builder.add("game.start_error.game_running", "Game cannot start: a game is already running. Please try again from the lobby.");
+        builder.add("game.backfire", "Backfire! You killed too many innocents and couldn't take it anymore.");
 
         builder.add("wathe.gui.reset", "Clear");
 
@@ -166,6 +167,9 @@ public class WatheLangGen extends FabricLanguageProvider {
         builder.add("wathe.midnightconfig.ultraPerfMode", "Ultra Performance Mode");
         builder.add("wathe.midnightconfig.ultraPerfMode.tooltip", "Restricts chunk rendering to train height for maximum performance.");
         builder.add("wathe.midnightconfig.disableScreenShake", "Disable Screen Shake");
+        builder.add("wathe.midnightconfig.leftClickShooting", "Left-click Shooting");
+        builder.add("wathe.midnightconfig.leftClickShooting.tooltip", "Fire supported guns with the Attack key (left-click by default) instead of Use Item. Only affects this client.");
+        builder.add("tip.gun.shoot", "%s to shoot");
 
         builder.add("wathe.argument.game_mode.invalid", "Game mode could not be found");
         builder.add("wathe.argument.map_effect.invalid", "Map effect could not be found");

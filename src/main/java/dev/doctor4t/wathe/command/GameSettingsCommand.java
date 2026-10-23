@@ -51,9 +51,16 @@ public class GameSettingsCommand {
                                                 .executes(context -> setAutoStart(context.getSource(), IntegerArgumentType.getInteger(context, "seconds")))
                                         )
                                 )
-                                .then(CommandManager.literal("backfire")
-                                        .then(CommandManager.argument("chance", FloatArgumentType.floatArg(0f, 1f))
-                                                .executes(context -> setBackfire(context.getSource(), FloatArgumentType.getFloat(context, "chance")))
+                                .then(CommandManager.literal("backfireChancePerInnocentKill")
+                                        .then(CommandManager.argument("chancePerKill", FloatArgumentType.floatArg(0, 1))
+                                                .executes(context -> {
+                                                    GameWorldComponent.KEY.get(context.getSource().getWorld()).setBackfireChancePerInnocentKill(FloatArgumentType.getFloat(context, "chancePerKill"));
+                                                    return 1;
+                                                }))
+                                )
+                                .then(CommandManager.literal("secretMurderRoundChance")
+                                        .then(CommandManager.argument("chance", FloatArgumentType.floatArg(0, 1))
+                                                .executes(context -> setSecretMurderRoundChance(context.getSource(), FloatArgumentType.getFloat(context, "chance")))
                                         )
                                 )
                                 .then(CommandManager.literal("roleDividend")
@@ -80,7 +87,7 @@ public class GameSettingsCommand {
                                         .executes(context -> sendVar(context.getSource(), "autoStart", AutoStartComponent.KEY.get(context.getSource().getWorld()).startTime))
                                 )
                                 .then(CommandManager.literal("backfire")
-                                        .executes(context -> sendVar(context.getSource(), "backfireChance", GameWorldComponent.KEY.get(context.getSource().getWorld()).getBackfireChance()))
+                                        .executes(context -> sendVar(context.getSource(), "backfireChancePerInnocentKill", GameWorldComponent.KEY.get(context.getSource().getWorld()).getBackfireChancePerInnocentKill()))
                                 )
                                 .then(CommandManager.literal("roleDividend")
                                         .then(CommandManager.literal("killer")
@@ -108,15 +115,15 @@ public class GameSettingsCommand {
         return 1;
     }
 
-    private static int setAutoStart(ServerCommandSource source, int seconds) {
+    private static int setSecretMurderRoundChance(ServerCommandSource source, float percentage) {
         return Wathe.executeSupporterCommand(source,
-                () -> AutoStartComponent.KEY.get(source.getWorld()).setStartTime(GameConstants.getInTicks(0, seconds))
+                () -> GameWorldComponent.KEY.get(source.getWorld()).setSecretMurderRoundChance(percentage)
         );
     }
 
-    private static int setBackfire(ServerCommandSource source, float chance) {
+    private static int setAutoStart(ServerCommandSource source, int seconds) {
         return Wathe.executeSupporterCommand(source,
-                () -> GameWorldComponent.KEY.get(source.getWorld()).setBackfireChance(chance)
+                () -> AutoStartComponent.KEY.get(source.getWorld()).setStartTime(GameConstants.getInTicks(0, seconds))
         );
     }
 

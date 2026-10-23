@@ -64,7 +64,8 @@ public class GameWorldComponent implements AutoSyncedComponent, ServerTickingCom
 
     private UUID looseEndWinner;
 
-    private float backfireChance = 0f;
+    private float backfireChancePerInnocentKill = 0.2f;
+    private float secretMurderRoundChance = .1f;
 
     private int killerDividend = 5;
     private int vigilanteDividend = 5;
@@ -234,12 +235,21 @@ public class GameWorldComponent implements AutoSyncedComponent, ServerTickingCom
         this.lockedToSupporters = lockedToSupporters;
     }
 
-    public float getBackfireChance() {
-        return backfireChance;
+    public float getBackfireChancePerInnocentKill() {
+        return backfireChancePerInnocentKill;
     }
 
-    public void setBackfireChance(float backfireChance) {
-        this.backfireChance = backfireChance;
+    public void setBackfireChancePerInnocentKill(float backfireChancePerInnocentKill) {
+        this.backfireChancePerInnocentKill = backfireChancePerInnocentKill;
+        this.sync();
+    }
+
+    public float getSecretMurderRoundChance() {
+        return secretMurderRoundChance;
+    }
+
+    public void setSecretMurderRoundChance(float secretMurderRoundChance) {
+        this.secretMurderRoundChance = secretMurderRoundChance;
         this.sync();
     }
 
@@ -273,7 +283,12 @@ public class GameWorldComponent implements AutoSyncedComponent, ServerTickingCom
         this.fade = nbtCompound.getInt("Fade");
         this.psychosActive = nbtCompound.getInt("PsychosActive");
 
-        this.backfireChance = nbtCompound.getFloat("BackfireChance");
+        // Retain the saved administrator setting when upgrading a pre-1.4 world.
+        // 1.4 applies this value per prior innocent kill rather than as a flat chance.
+        this.backfireChancePerInnocentKill = nbtCompound.contains("BackfireChancePerInnocentKill")
+                ? nbtCompound.getFloat("BackfireChancePerInnocentKill")
+                : nbtCompound.contains("BackfireChance") ? nbtCompound.getFloat("BackfireChance") : 0.2f;
+        this.secretMurderRoundChance = nbtCompound.contains("SecretMurderRoundChance") ? nbtCompound.getFloat("SecretMurderRoundChance") : 0.1f;
 
         this.killerDividend = nbtCompound.getInt("KillerDividend");
         this.vigilanteDividend = nbtCompound.getInt("VigilanteDividend");
@@ -309,7 +324,8 @@ public class GameWorldComponent implements AutoSyncedComponent, ServerTickingCom
         nbtCompound.putInt("Fade", fade);
         nbtCompound.putInt("PsychosActive", psychosActive);
 
-        nbtCompound.putFloat("BackfireChance", backfireChance);
+        nbtCompound.putFloat("BackfireChancePerInnocentKill", backfireChancePerInnocentKill);
+        nbtCompound.putFloat("SecretMurderRoundChance", secretMurderRoundChance);
 
         nbtCompound.putInt("KillerDividend", killerDividend);
         nbtCompound.putInt("VigilanteDividend", vigilanteDividend);

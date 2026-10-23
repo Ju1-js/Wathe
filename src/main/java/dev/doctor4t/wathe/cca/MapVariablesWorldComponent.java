@@ -206,6 +206,12 @@ public class MapVariablesWorldComponent implements AutoSyncedComponent {
             this(new Vec3d(x, y, z), yaw, pitch);
         }
 
+        @Override
+        public String toString() {
+            return "x=" + pos.x + ", y=" + pos.y + ", z=" + pos.z
+                    + ", yaw=" + yaw + ", pitch=" + pitch;
+        }
+
     }
 
     public static Vec3d getVec3dFromNbt(NbtCompound tag, String name) {
