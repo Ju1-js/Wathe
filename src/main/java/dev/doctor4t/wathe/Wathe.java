@@ -8,7 +8,6 @@ import dev.doctor4t.wathe.command.*;
 import dev.doctor4t.wathe.command.argument.GameModeArgumentType;
 import dev.doctor4t.wathe.command.argument.MapEffectArgumentType;
 import dev.doctor4t.wathe.command.argument.TimeOfDayArgumentType;
-import dev.doctor4t.wathe.world.WatheMapWorlds;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.world.TeleportTarget;
@@ -16,6 +15,9 @@ import dev.doctor4t.wathe.game.GameConstants;
 import dev.doctor4t.wathe.index.*;
 import dev.doctor4t.wathe.util.*;
 import dev.doctor4t.wathe.world.WatheMapWorlds;
+import dev.doctor4t.wathe.network.*;
+import dev.doctor4t.wathe.util.PoisonUtils;
+import dev.doctor4t.wathe.util.Scheduler;
 import dev.upcraft.datasync.api.DataSyncAPI;
 import dev.upcraft.datasync.api.util.Entitlements;
 import net.fabricmc.api.ModInitializer;
@@ -65,6 +67,7 @@ public class Wathe implements ModInitializer {
         WatheItems.initialize();
         WatheBlockEntities.initialize();
         WatheParticles.initialize();
+        WatheCosmetics.initialize();
 
         // Register command argument types
         ArgumentTypeRegistry.registerArgumentType(id("timeofday"), TimeOfDayArgumentType.class, ConstantArgumentSerializer.of(TimeOfDayArgumentType::timeofday));
@@ -90,6 +93,7 @@ public class Wathe implements ModInitializer {
 
         // Auto-load the last used map world on startup
         ServerLifecycleEvents.SERVER_STARTED.register(WatheMapWorlds::autoLoad);
+        ServerLifecycleEvents.SERVER_STOPPED.register(server -> WatheMapWorlds.closeSessions());
 
         // Redirect players to the active map world on respawn (vanilla always respawns in minecraft:overworld)
         ServerPlayerEvents.AFTER_RESPAWN.register((oldPlayer, newPlayer, alive) -> {
@@ -146,6 +150,7 @@ public class Wathe implements ModInitializer {
         PayloadTypeRegistry.playC2S().register(GunShootPayload.ID, GunShootPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(StoreBuyPayload.ID, StoreBuyPayload.CODEC);
         PayloadTypeRegistry.playC2S().register(NoteEditPayload.ID, NoteEditPayload.CODEC);
+        PayloadTypeRegistry.playC2S().register(AttackUsePayload.ID, AttackUsePayload.CODEC);
         ServerPlayNetworking.registerGlobalReceiver(KnifeStabPayload.ID, new KnifeStabPayload.Receiver());
         ServerPlayNetworking.registerGlobalReceiver(GunShootPayload.ID, new GunShootPayload.Receiver());
         ServerPlayNetworking.registerGlobalReceiver(StoreBuyPayload.ID, new StoreBuyPayload.Receiver());

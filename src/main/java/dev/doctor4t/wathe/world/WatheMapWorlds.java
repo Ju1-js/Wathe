@@ -37,6 +37,27 @@ public class WatheMapWorlds {
     private static final Gson GSON = new Gson();
 
     private static String currentMapName = null;
+    private static final Map<ServerWorld, LevelStorage.Session> SESSIONS = new IdentityHashMap<>();
+
+    private static void validateFolder(MinecraftServer server, String name) throws IOException {
+        if (name == null || !name.matches("[a-z0-9_.-]+") || name.equals(".") || name.equals(".."))
+            throw new IOException("Map names must be direct, lowercase world folder names");
+        Path root = server.getRunDirectory().toRealPath();
+        Path folder = root.resolve(name);
+        if (!Files.isDirectory(folder) || !folder.toRealPath().getParent().equals(root)
+                || Files.isSymbolicLink(folder) || !Files.isRegularFile(folder.resolve("level.dat")))
+            throw new IOException("Map folder must be a direct non-symlink world folder containing level.dat");
+        if (name.equals(getHubFolderName(server))) throw new IOException("Use the existing overworld for the hub");
+    }
+
+    public static void closeSessions() {
+        for (var session : SESSIONS.values()) {
+            try { session.close(); } catch (IOException e) { Wathe.LOGGER.error("Closing map session", e); }
+        }
+        SESSIONS.clear();
+        currentMapName = null;
+    }
+
 
     private static final WorldGenerationProgressListener NOOP_LISTENER = new WorldGenerationProgressListener() {
         @Override
@@ -90,6 +111,7 @@ public class WatheMapWorlds {
      * Loads a world folder from the server root as a new ServerWorld on demand.
      */
     public static ServerWorld load(MinecraftServer server, String folderName) throws IOException {
+        validateFolder(server, folderName);
         RegistryKey<World> worldKey = keyFor(folderName);
         Map<RegistryKey<World>, ServerWorld> worlds = ((MinecraftServerAccessor) server).getWorlds();
 
@@ -98,12 +120,14 @@ public class WatheMapWorlds {
         Executor workerExecutor = ((MinecraftServerAccessor) server).getWorkerExecutor();
         LevelStorage.Session session = LevelStorage.create(server.getRunDirectory()).createSessionWithoutSymlinkCheck(folderName);
 
+        try {
         ServerWorld overworld = server.getOverworld();
         DimensionOptions dimensionOptions = new DimensionOptions(overworld.getDimensionEntry(), overworld.getChunkManager().getChunkGenerator());
 
         ServerWorld mapWorld = new ServerWorld(server, workerExecutor, session, new MapWorldProperties(folderName, overworld.getGameRules(), server.getSaveProperties().getDifficulty()), worldKey, dimensionOptions, NOOP_LISTENER, false, overworld.getSeed(), Collections.emptyList(), true, null);
 
         worlds.put(worldKey, mapWorld);
+        SESSIONS.put(mapWorld, session);
 
         // Force-load spawn chunks, same as vanilla does for the overworld.
         // This keeps the train template, scenery, and play area chunks always loaded.
@@ -111,6 +135,10 @@ public class WatheMapWorlds {
 
         Wathe.LOGGER.info("Loaded map world '{}'.", folderName);
         return mapWorld;
+        } catch (RuntimeException | Error e) {
+            try { session.close(); } catch (IOException closing) { e.addSuppressed(closing); }
+            throw e;
+        }
     }
 
     /**
@@ -121,6 +149,8 @@ public class WatheMapWorlds {
         if (!isMapWorldKey(key)) return;
 
         Map<RegistryKey<World>, ServerWorld> worlds = ((MinecraftServerAccessor) server).getWorlds();
+        if (!world.getPlayers().isEmpty()) throw new IllegalStateException("Cannot unload an occupied map world");
+        if (worlds.get(key) != world) return;
         worlds.remove(key);
         try {
             // flush=false queues chunk writes asynchronously instead of blocking
@@ -131,6 +161,9 @@ public class WatheMapWorlds {
             Wathe.LOGGER.info("Unloaded map world '{}'.", folderNameFrom(key));
         } catch (IOException e) {
             Wathe.LOGGER.error("Error closing map world '{}': {}", folderNameFrom(key), e.getMessage());
+        } finally {
+            LevelStorage.Session session = SESSIONS.remove(world);
+            if (session != null) try { session.close(); } catch (IOException e) { Wathe.LOGGER.error("Closing map session", e); }
         }
     }
 
@@ -187,7 +220,7 @@ public class WatheMapWorlds {
     }
 
     public static RegistryKey<World> keyFor(String folderName) {
-        return RegistryKey.of(RegistryKeys.WORLD, Wathe.id(MAP_KEY_PREFIX + folderName));
+        return RegistryKey.of(RegistryKeys.WORLD, net.minecraft.util.Identifier.of("wathe", MAP_KEY_PREFIX + folderName));
     }
 
     public static boolean isMapWorldKey(RegistryKey<World> key) {

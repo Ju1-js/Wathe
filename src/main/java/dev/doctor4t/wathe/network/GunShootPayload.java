@@ -1,15 +1,18 @@
-package dev.doctor4t.wathe.util;
+package dev.doctor4t.wathe.network;
 
+import dev.doctor4t.wathe.util.RangeChecks;
 import dev.doctor4t.wathe.Wathe;
 import dev.doctor4t.wathe.WatheConfig;
 import dev.doctor4t.wathe.cca.GameWorldComponent;
 import dev.doctor4t.wathe.cca.PlayerMoodComponent;
+import dev.doctor4t.wathe.cca.PlayerVariablesComponent;
 import dev.doctor4t.wathe.game.GameConstants;
 import dev.doctor4t.wathe.game.GameFunctions;
 import dev.doctor4t.wathe.index.WatheDataComponentTypes;
 import dev.doctor4t.wathe.index.WatheItems;
 import dev.doctor4t.wathe.index.WatheSounds;
 import dev.doctor4t.wathe.index.tag.WatheItemTags;
+import dev.doctor4t.wathe.util.Scheduler;
 import net.fabricmc.fabric.api.networking.v1.PlayerLookup;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.entity.Entity;
@@ -27,6 +30,9 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.hit.EntityHitResult;
 import net.minecraft.util.hit.HitResult;
+import net.minecraft.text.Style;
+import net.minecraft.text.Text;
+import net.minecraft.util.Formatting;
 import org.jetbrains.annotations.NotNull;
 
 import java.util.function.Predicate;
@@ -88,12 +94,11 @@ public record GunShootPayload(int target) implements CustomPayload {
 
                 boolean backfire = false;
 
-                if (game.isInnocent(target) && !player.isCreative() && mainHandStack.isOf(revolver)) {
-                    // backfire: if you kill an innocent you have a chance of shooting yourself instead
-                    if (game.isInnocent(player) && player.getRandom().nextFloat() <= game.getBackfireChance()) {
-                        backfire = true;
-                        GameFunctions.killPlayer(player, true, player, GameConstants.DeathReasons.GUN);
-                    } else {
+                if (!player.isCreative() && mainHandStack.isOf(revolver)) {
+                    PlayerVariablesComponent playerVariablesComponent = PlayerVariablesComponent.KEY.get(player);
+
+                    if (game.isInnocent(target)) {
+                        // drop gun and lower mood
                         Scheduler.schedule(() -> {
                             if (!context.player().getInventory().contains((s) -> s.isIn(WatheItemTags.GUNS))) return;
                             player.getInventory().remove((s) -> s.isOf(revolver), 1, player.getInventory());
@@ -105,6 +110,19 @@ public record GunShootPayload(int target) implements CustomPayload {
                             ServerPlayNetworking.send(player, new GunDropPayload());
                             PlayerMoodComponent.KEY.get(player).setMood(0);
                         }, 4);
+
+                        // backfire: if you kill an innocent and are not a killer you have a chance of shooting yourself instead
+                        if (game.isInnocent(player)) {
+                            if (player.getRandom().nextFloat() <= playerVariablesComponent.getInnocentKills() * game.getBackfireChancePerInnocentKill()) {
+                                backfire = true;
+                                player.sendMessage(Text.translatable("game.backfire").setStyle(Style.EMPTY.withColor(Formatting.DARK_RED)), true);
+                                GameFunctions.killPlayer(player, true, player, GameConstants.DeathReasons.GUN);
+                            }
+
+                            playerVariablesComponent.incrementInnocentKills();
+                        }
+                    } else {
+                        playerVariablesComponent.setInnocentKills(0);
                     }
                 }
 

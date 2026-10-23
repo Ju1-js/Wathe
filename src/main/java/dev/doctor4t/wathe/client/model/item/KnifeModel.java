@@ -1,7 +1,6 @@
 package dev.doctor4t.wathe.client.model.item;
 
 import dev.doctor4t.wathe.index.WatheCosmetics;
-import dev.doctor4t.wathe.item.KnifeItem;
 import net.fabricmc.fabric.api.renderer.v1.model.FabricBakedModel;
 import net.fabricmc.fabric.api.renderer.v1.render.RenderContext;
 import net.minecraft.block.BlockState;
@@ -29,7 +28,7 @@ public class KnifeModel implements UnbakedModel, FabricBakedModel, BakedModel {
     /**
      * indexed by skin, then variant!
      */
-    private final BakedModel[][] bakedModels = new BakedModel[KnifeItem.Skin.values().length][KnifeModelLoadingPlugin.Variant.values().length];
+    private final BakedModel[][] bakedModels = new BakedModel[WatheCosmetics.KNIFE_SKINS_MANAGER.skinList.size()][KnifeModelLoadingPlugin.Variant.values().length];
     private final UnbakedModel defaultUnbakedModel;
 
     public KnifeModel(UnbakedModel defaultUnbakedModel) {
@@ -48,9 +47,9 @@ public class KnifeModel implements UnbakedModel, FabricBakedModel, BakedModel {
 
     @Override
     public @Nullable BakedModel bake(Baker baker, Function<SpriteIdentifier, Sprite> textureGetter, ModelBakeSettings settings) {
-        for (KnifeItem.Skin skin : KnifeItem.Skin.values()) {
+        for (WatheCosmetics.ItemSkinsManager.Skin skin : WatheCosmetics.KNIFE_SKINS_MANAGER.skinList) {
             for (KnifeModelLoadingPlugin.Variant variant : KnifeModelLoadingPlugin.Variant.values()) {
-                bakedModels[skin.ordinal()][variant.ordinal()] = baker.bake(KnifeModelLoadingPlugin.getModelLocation(skin, variant), settings);
+                bakedModels[WatheCosmetics.KNIFE_SKINS_MANAGER.skinList.indexOf(skin)][variant.ordinal()] = baker.bake(KnifeModelLoadingPlugin.getModelLocation(skin, variant), settings);
             }
         }
 
@@ -66,11 +65,11 @@ public class KnifeModel implements UnbakedModel, FabricBakedModel, BakedModel {
 
     @Override
     public void emitItemQuads(ItemStack stack, Supplier<Random> randomSupplier, RenderContext context) {
-        var mode = context.itemTransformationMode();
-        var variant = mode.isFirstPerson() || IN_HAND.contains(mode) ? KnifeModelLoadingPlugin.Variant.IN_HAND : KnifeModelLoadingPlugin.Variant.DEFAULT;
-        var skin = KnifeItem.Skin.fromString(WatheCosmetics.getSkin(stack));
+        ModelTransformationMode mode = context.itemTransformationMode();
+        KnifeModelLoadingPlugin.Variant variant = mode.isFirstPerson() || IN_HAND.contains(mode) ? KnifeModelLoadingPlugin.Variant.IN_HAND : KnifeModelLoadingPlugin.Variant.DEFAULT;
+        WatheCosmetics.ItemSkinsManager.Skin skin = WatheCosmetics.KNIFE_SKINS_MANAGER.fromString(WatheCosmetics.getSkinName(stack));
 
-        bakedModels[skin.ordinal()][variant.ordinal()].emitItemQuads(stack, randomSupplier, context);
+        bakedModels[WatheCosmetics.KNIFE_SKINS_MANAGER.skinList.indexOf(skin)][variant.ordinal()].emitItemQuads(stack, randomSupplier, context);
     }
 
     @Override
@@ -114,6 +113,6 @@ public class KnifeModel implements UnbakedModel, FabricBakedModel, BakedModel {
     }
 
     private BakedModel getDefaultModel() {
-        return bakedModels[KnifeItem.Skin.DEFAULT.ordinal()][KnifeModelLoadingPlugin.Variant.DEFAULT.ordinal()];
+        return bakedModels[0][KnifeModelLoadingPlugin.Variant.DEFAULT.ordinal()];
     }
 }

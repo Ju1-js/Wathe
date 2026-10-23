@@ -25,6 +25,7 @@ public class CustomConfigMapEffect extends KeyProvidingMapEffect {
             int rainDuration = clearTime == 0 ? WEATHER_DURATION : 0;
             serverWorld.setWeather(clearTime, rainDuration, vars.isCustomMapRaining(), vars.isCustomMapThundering());
         }
+        if (players.isEmpty()) return;
         if (vars.getCustomMapNumRoomKeys() > 0)
             provideKeysOnly(serverWorld, players, vars.getCustomMapNumRoomKeys(), vars.getCustomMapRoomKeyString());
         String[] guaranteedKeys = keyVarToArray(vars.getCustomMapGuaranteedKeys());

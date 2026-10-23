@@ -5,13 +5,16 @@
 	"name": "Wathe",
 	"description": "A murder mystery social game.",
 	"authors": [
-		"doctor4t",
+		"RAT / doctor4t",
 		"AmyMialee",
 		"BackupCup",
 		"Winsweep",
 		"Luxintrus",
 		"CallMeArthys",
-		"Arathain"
+		"Arathain",
+		"SemberScythe (Knife Skins)",
+		"NOONYEYZ (Revolver Skins)",
+		"Nitron (Revolver Skins)"
 	],
 	"license": "ARR",
 	"icon": "assets/wathe/icon.png",
@@ -52,7 +55,8 @@
 			"wathe:poison",
 			"wathe:psycho",
 			"wathe:rolecounter",
-			"wathe:note"
+			"wathe:note",
+			"wathe:playervariables"
 		],
 		"loom:injected_interfaces": {
 			"net/minecraft/class_5483/class_5496" : ["dev/doctor4t/wathe/util/BlockSettingsAdditions"]

@@ -1,5 +1,6 @@
-package dev.doctor4t.wathe.util;
+package dev.doctor4t.wathe.network;
 
+import dev.doctor4t.wathe.util.RangeChecks;
 import dev.doctor4t.wathe.Wathe;
 import dev.doctor4t.wathe.WatheConfig;
 import dev.doctor4t.wathe.api.WatheGameModes;

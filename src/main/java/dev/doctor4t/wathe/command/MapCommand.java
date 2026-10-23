@@ -34,7 +34,8 @@ public class MapCommand {
     }
 
     private static int swap(ServerCommandSource source, String name) {
-        if (GameWorldComponent.KEY.get(source.getWorld()).isRunning()) {
+        if (java.util.stream.StreamSupport.stream(source.getServer().getWorlds().spliterator(), false)
+                .anyMatch(world -> GameWorldComponent.KEY.get(world).isRunning())) {
             source.sendError(Text.literal("Cannot swap maps while a game is running."));
             return -1;
         }
@@ -82,7 +83,7 @@ public class MapCommand {
         }, 3);
 
         // Unload the previous world if it was a dynamically loaded map world
-        if (previousWasMapWorld) {
+        if (previousWasMapWorld && previousWorld != target) {
             WatheMapWorlds.unload(source.getServer(), previousWorld);
         }
 

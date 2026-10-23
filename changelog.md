@@ -1,4 +1,36 @@
 ------------------------------------------------------
+Wathe 1.4.1 - 1.21.1
+------------------------------------------------------
+- Added a new Harpy's Feather knife skin
+
+------------------------------------------------------
+Wathe 1.4 - 1.21.1
+------------------------------------------------------
+- Made backfire into an incremental mechanic
+  - Each innocent kill now increases an invisible counter
+  - That invisible counter determines the chance you have to shoot yourself instead of your target the next time you shoot an innocent
+  - Default is 0.2 (20%) per innocent kill. Resets when killing a murderer.
+  - E.g.: First innocent kill won't cause anything, second innocent kill has a 20% chance to kill you, third 40%, etc...
+  - Command to modify it is available to everyone. Can be disabled by setting backfire chance to 0
+    - /wathe:gameSettings set backfireChancePerInnocentKill <chancePerKill>
+    - <chancePerKill> being a percentage from 0 to 1 (e.g. 0.2 is 20%, 0.78 is 78%, 0.01 is 1% etc...)
+- Added a secret "murder round"
+  - This round is a special gamemode where everyone is a murderer, but no one knows about it!
+  - Goal of this round is to be the last murderer standing
+  - This secret round has a 10% chance of happening when starting a regular murder game
+    - Supporters have access to a command to change that chance
+      - /wathe:gameSettings set secretMurderRoundChance <chance>
+      - <chance> being a percentage from 0 to 1
+    - Can also manually be started with /wathe:start wathe:secret_murder
+- Pistol firing is now done through the attack input instead of the use input
+  - No more accidental firing when interacting with the environment with a pistol in hand!
+- Time extensions from kills can now no longer extend the time past 5 minutes
+  - Getting a kill while the timer is above 5 minutes will not reduce it but will not grant extra time
+- Added revolver skins for supporters (Broomhandle, Blundabust, Western, Bayonet)
+- Added random rotations to the gunshot flash
+- Fixed murderers not being properly highlighted in spectator
+
+------------------------------------------------------
 Wathe 1.3.2 - 1.21.1
 ------------------------------------------------------
 - Fixed the horn not starting the murder mystery game mode at night how intended
