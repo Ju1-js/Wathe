@@ -8,6 +8,11 @@
     "PlayerManagerMixin"
   ],
   "mixins": [
+    "compat.noellesroles.ExecutionerAnnouncementMixin",
+    "compat.noellesroles.JesterContainerMixin",
+    "compat.kinswathe.WrenchItemMixin",
+    "compat.hsr.BanditRevolverReceiverMixin",
+    "compat.kinswathe.DreamerKillerComponentMixin",
     "AbstractBlockInvoker",
     "DimensionTypeMixin",
     "AbstractBlockSettingsMixin",
@@ -21,13 +26,13 @@
     "PlayerEntityMixin",
     "PlayerInventoryMixin",
     "ServerPlayerEntityMixin",
-    "ServerPlayNetworkHandlerMixin",
-    "client.LivingEntityRendererMixin"
+    "ServerPlayNetworkHandlerMixin"
   ],
   "injectors": {
     "defaultRequire": 1
   },
   "client": [
+    "client.LivingEntityRendererMixin",
     "client.AbstractClientPlayerEntityMixin",
     "client.EntityRendererDispatchMixin",
     "client.GameRendererMixin",

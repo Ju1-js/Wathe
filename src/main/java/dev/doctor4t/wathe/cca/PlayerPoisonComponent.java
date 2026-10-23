@@ -96,8 +96,11 @@ public class PlayerPoisonComponent implements AutoSyncedComponent, ServerTicking
 
     public void setPoisonTicks(int ticks, UUID poisoner) {
         this.poisoner = poisoner;
-        this.poisonTicks = ticks;
-        if (this.initialPoisonTicks == 0) this.initialPoisonTicks = ticks;
+        // Repeated exposure can clamp the remaining time to zero. Both the
+        // ordinary ticker and KW's replacement decrement before checking expiry;
+        // leave one tick so zero cannot turn into the inactive sentinel (-1).
+        this.poisonTicks = ticks == 0 ? 1 : ticks;
+        if (this.initialPoisonTicks == 0) this.initialPoisonTicks = this.poisonTicks;
         this.sync();
     }
 

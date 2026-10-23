@@ -100,6 +100,7 @@ public record GunShootPayload(int target) implements CustomPayload {
                     if (game.isInnocent(target)) {
                         // drop gun and lower mood
                         Scheduler.schedule(() -> {
+                            if (dev.doctor4t.wathe.compat.LegacyRoleAddons.keepRevolver(player)) return;
                             if (!context.player().getInventory().contains((s) -> s.isIn(WatheItemTags.GUNS))) return;
                             player.getInventory().remove((s) -> s.isOf(revolver), 1, player.getInventory());
                             ItemEntity item = player.dropItem(revolver.getDefaultStack(), false, false);
