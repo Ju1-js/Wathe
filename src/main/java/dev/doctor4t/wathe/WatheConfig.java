@@ -7,6 +7,8 @@ public class WatheConfig extends MidnightConfig {
     public static boolean ultraPerfMode = false;
     @Entry
     public static boolean disableScreenShake = false;
+    @Entry
+    public static boolean leftClickShooting = false;
 
     @Server
     @Entry(category = "GameConstants", min = 0)

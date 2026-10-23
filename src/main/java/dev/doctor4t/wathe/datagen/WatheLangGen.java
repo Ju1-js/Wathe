@@ -167,6 +167,9 @@ public class WatheLangGen extends FabricLanguageProvider {
         builder.add("wathe.midnightconfig.ultraPerfMode", "Ultra Performance Mode");
         builder.add("wathe.midnightconfig.ultraPerfMode.tooltip", "Restricts chunk rendering to train height for maximum performance.");
         builder.add("wathe.midnightconfig.disableScreenShake", "Disable Screen Shake");
+        builder.add("wathe.midnightconfig.leftClickShooting", "Left-click Shooting");
+        builder.add("wathe.midnightconfig.leftClickShooting.tooltip", "Fire supported guns with the Attack key (left-click by default) instead of Use Item. Only affects this client.");
+        builder.add("tip.gun.shoot", "%s to shoot");
 
         builder.add("wathe.argument.game_mode.invalid", "Game mode could not be found");
         builder.add("wathe.argument.map_effect.invalid", "Map effect could not be found");

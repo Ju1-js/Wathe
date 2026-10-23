@@ -38,6 +38,7 @@
     "defaultRequire": 1
   },
   "client": [
+    "compat.hsr.BanditRevolverItemMixin",
     "client.LivingEntityRendererMixin",
     "client.AbstractClientPlayerEntityMixin",
     "client.EntityRendererDispatchMixin",

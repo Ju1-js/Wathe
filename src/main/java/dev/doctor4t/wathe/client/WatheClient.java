@@ -30,6 +30,7 @@ import dev.doctor4t.wathe.game.GameConstants;
 import dev.doctor4t.wathe.game.GameFunctions;
 import dev.doctor4t.wathe.index.*;
 import dev.doctor4t.wathe.item.AttackUseItem;
+import dev.doctor4t.wathe.client.util.GunControls;
 import dev.doctor4t.wathe.network.*;
 import dev.doctor4t.wathe.util.ConfigSyncPayload;
 import dev.doctor4t.wathe.util.HandParticleManager;
@@ -149,9 +150,10 @@ public class WatheClient implements ClientModInitializer {
         });
 
         ClientPreAttackCallback.EVENT.register((client, player, clickCount) -> {
-            if (player.getMainHandStack().getItem() instanceof AttackUseItem attackUseItem) {
-                attackUseItem.triggerAttackUseClient(player);
-                ClientPlayNetworking.send(new AttackUsePayload());
+            if (player.getMainHandStack().getItem() instanceof AttackUseItem) {
+                if (!GunControls.usesRightClick(player.getMainHandStack())) {
+                    GunControls.fire(player);
+                }
                 client.options.attackKey.setPressed(false);
 
                 return true;
