@@ -19,6 +19,10 @@ public final class LegacyRoleAddons {
         return isVersion("noellesroles", "1.7.5-h1.4");
     }
 
+    public static boolean needsShooterPunishmentsPatch() {
+        return isVersion("shooterpunishments", "1.2");
+    }
+
     private static boolean isVersion(String id, String version) {
         return FabricLoader.getInstance().getModContainer(id)
                 .map(mod -> mod.getMetadata().getVersion().getFriendlyString().equals(version))

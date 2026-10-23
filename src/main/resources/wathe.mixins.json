@@ -8,6 +8,12 @@
     "PlayerManagerMixin"
   ],
   "mixins": [
+    "compat.shooterpunishments.SavedSettingMixin",
+    "compat.shooterpunishments.ItemPickupMixin",
+    "compat.shooterpunishments.RoundStartMixin",
+    "compat.shooterpunishments.GunReceiverMixin",
+    "compat.shooterpunishments.BanditReceiverMixin",
+    "compat.shooterpunishments.ContainerPickupMixin",
     "compat.noellesroles.ExecutionerAnnouncementMixin",
     "compat.noellesroles.JesterContainerMixin",
     "compat.kinswathe.WrenchItemMixin",
