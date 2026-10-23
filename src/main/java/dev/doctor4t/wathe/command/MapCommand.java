@@ -40,8 +40,22 @@ public class MapCommand {
             return -1;
         }
 
+        if (!WatheMapWorlds.beginSwap(source.getServer())) {
+            source.sendError(Text.literal("A map swap is already in progress."));
+            return -1;
+        }
+        try {
+            return performSwap(source, name);
+        } finally {
+            WatheMapWorlds.endSwap(source.getServer());
+        }
+    }
+
+    private static int performSwap(ServerCommandSource source, String name) {
         // Store current world to unload it after
-        ServerWorld previousWorld = source.getWorld();
+        String activeMap = WatheMapWorlds.getCurrentMapName();
+        ServerWorld previousWorld = activeMap == null ? source.getServer().getOverworld()
+                : WatheMapWorlds.getLoaded(source.getServer(), activeMap).orElse(source.getServer().getOverworld());
         boolean previousWasMapWorld = WatheMapWorlds.isMapWorldKey(previousWorld.getRegistryKey());
 
         String hubName = WatheMapWorlds.getHubFolderName(source.getServer());
@@ -55,6 +69,7 @@ public class MapCommand {
             try {
                 target = WatheMapWorlds.load(source.getServer(), name);
             } catch (Exception e) {
+                Wathe.LOGGER.error("Failed to load map world '{}'", name, e);
                 source.sendError(Text.literal("Failed to load map world '" + name + "': " + e.getMessage()));
                 return -1;
             }
@@ -73,6 +88,7 @@ public class MapCommand {
         final ServerWorld expectedWorld = target;
         Scheduler.schedule(() -> {
             for (ServerPlayerEntity p : source.getServer().getPlayerManager().getPlayerList()) {
+                if (!java.util.Objects.equals(WatheMapWorlds.getCurrentMapName(), targetIsHub ? null : name)) return;
                 if (p.getServerWorld() != expectedWorld) {
                     Wathe.LOGGER.warn("[swap-check] {} not in map '{}' after swap - actual: {} @ {},{},{}",
                             p.getNameForScoreboard(), name,
