@@ -7,11 +7,9 @@ import dev.doctor4t.wathe.compat.SodiumShaderInterface;
 import net.caffeinemc.mods.sodium.client.gl.buffer.GlBufferUsage;
 import net.caffeinemc.mods.sodium.client.gl.buffer.GlMutableBuffer;
 import net.caffeinemc.mods.sodium.client.gl.device.CommandList;
-import net.caffeinemc.mods.sodium.client.gl.device.MultiDrawBatch;
 import net.caffeinemc.mods.sodium.client.render.chunk.ChunkRenderMatrices;
 import net.caffeinemc.mods.sodium.client.render.chunk.DefaultChunkRenderer;
 import net.caffeinemc.mods.sodium.client.render.chunk.LocalSectionIndex;
-import net.caffeinemc.mods.sodium.client.render.chunk.data.SectionRenderDataStorage;
 import net.caffeinemc.mods.sodium.client.render.chunk.lists.ChunkRenderList;
 import net.caffeinemc.mods.sodium.client.render.chunk.lists.ChunkRenderListIterable;
 import net.caffeinemc.mods.sodium.client.render.chunk.region.RenderRegion;
@@ -63,9 +61,22 @@ public abstract class DefaultChunkRendererMixin {
                                          boolean useTranslucentSorting,
                                          CallbackInfo ci,
                                          @Local(ordinal = 0) ChunkShaderInterface shader,
-                                         @Local(ordinal = 0) RenderRegion region) {
+                                         @Local(ordinal = 0) RenderRegion region,
+                                         @Local(ordinal = 0) ChunkRenderList renderList) {
         if (wathe_buffer == null) {
             wathe_buffer = MemoryUtil.memAlloc(RenderRegion.REGION_SIZE * 16);
+        }
+
+        // Sodium caches draw commands across frames. Offsets depend on the current
+        // region, camera and animation time, so refresh them even for cached batches.
+        MemoryUtil.memSet(wathe_buffer, 0);
+        if (WatheClient.isTrainMoving()) {
+            var sections = renderList.sectionsWithGeometryIterator(renderPass.isTranslucent());
+            if (sections != null) {
+                while (sections.hasNext()) {
+                    wathe$offsetScenery(region, camera, sections.nextByteAsInt());
+                }
+            }
         }
 
         glBuffer = commandList.createMutableBuffer();
@@ -89,29 +100,8 @@ public abstract class DefaultChunkRendererMixin {
         glBuffer = null;
     }
 
-    @Inject(method = "fillCommandBuffer(Lnet/caffeinemc/mods/sodium/client/gl/device/MultiDrawBatch;Lnet/caffeinemc/mods/sodium/client/render/chunk/region/RenderRegion;Lnet/caffeinemc/mods/sodium/client/render/chunk/data/SectionRenderDataStorage;Lnet/caffeinemc/mods/sodium/client/render/chunk/lists/ChunkRenderList;Lnet/caffeinemc/mods/sodium/client/render/viewport/CameraTransform;Lnet/caffeinemc/mods/sodium/client/render/chunk/terrain/TerrainRenderPass;ZZ)V",
-            at = @At(value = "INVOKE",
-                    target = "Lnet/caffeinemc/mods/sodium/client/render/chunk/data/SectionRenderDataUnsafe;getSliceMask(J)I"),
-            remap = false)
-    private static void wathe$offsetScenery(
-            MultiDrawBatch batch,
-            RenderRegion region,
-            SectionRenderDataStorage renderDataStorage,
-            ChunkRenderList renderList,
-            CameraTransform camera,
-            TerrainRenderPass pass,
-            boolean useBlockFaceCulling,
-            boolean useTranslucentSorting,
-            CallbackInfo ci,
-            @Local(name = "sectionIndex") int sectionIndex
-    ) {
-        if (wathe_buffer == null) {
-            wathe_buffer = MemoryUtil.memAlloc(RenderRegion.REGION_SIZE * 16);
-        }
-        wathe_buffer.putFloat(sectionIndex * 16, 0);
-        wathe_buffer.putFloat(sectionIndex * 16 + 4, 0);
-        wathe_buffer.putFloat(sectionIndex * 16 + 8, 0);
-
+    @Unique
+    private static void wathe$offsetScenery(RenderRegion region, CameraTransform camera, int sectionIndex) {
         if (WatheClient.isTrainMoving()) {
             float trainSpeed = WatheClient.getTrainSpeed();
             int chunkSize = 16;
